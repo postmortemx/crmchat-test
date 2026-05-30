@@ -1,0 +1,1082 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Чат — Beauty CRM v2</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+:root {
+  --bg: #f5f4f1;
+  --surface: #ffffff;
+  --border: #e6e4de;
+  --border-light: #f0ede8;
+  --text-primary: #1a1916;
+  --text-secondary: #6b6860;
+  --text-tertiary: #a8a49e;
+  --accent: #2563eb;
+  --accent-bg: #eff4ff;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --shadow-lg: 0 12px 40px rgba(0,0,0,0.10), 0 4px 12px rgba(0,0,0,0.05);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', sans-serif; background: var(--bg); display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
+
+.app { width: 100%; max-width: 1100px; background: var(--surface); border-radius: var(--radius-lg); box-shadow: var(--shadow-lg); overflow: hidden; display: grid; grid-template-columns: 260px 1fr 220px; height: 640px; border: 0.5px solid var(--border); position: relative; }
+
+/* LIST */
+.col-list { border-right: 1px solid var(--border); display: flex; flex-direction: column; }
+.list-header { padding: 10px 12px; border-bottom: 1px solid var(--border); display: flex; gap: 8px; align-items: center; }
+.search-wrap { flex: 1; display: flex; align-items: center; gap: 6px; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 6px 10px; }
+.search-wrap i { color: var(--text-tertiary); font-size: 12px; }
+.search-wrap input { border: none; background: transparent; outline: none; font-size: 12px; color: var(--text-primary); width: 100%; }
+.search-wrap input::placeholder { color: var(--text-tertiary); }
+.filter-btn { width: 30px; height: 30px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--surface); display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-secondary); font-size: 13px; flex-shrink: 0; }
+.filter-btn:hover { background: var(--bg); }
+.chat-list { flex: 1; overflow-y: auto; }
+.chat-list::-webkit-scrollbar { width: 0; }
+.chat-item { padding: 10px 12px; display: flex; gap: 10px; align-items: center; cursor: pointer; border-bottom: 1px solid var(--border-light); transition: background 0.12s; }
+.chat-item:hover { background: var(--bg); }
+.chat-item.active { background: var(--accent-bg); }
+.avatar { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; flex-shrink: 0; border: 1px solid var(--border); color: var(--text-secondary); background: var(--bg); }
+.item-body { flex: 1; min-width: 0; }
+.item-r1 { display: flex; justify-content: space-between; align-items: center; gap: 4px; margin-bottom: 3px; }
+.item-r2 { display: flex; justify-content: space-between; align-items: center; gap: 4px; }
+.item-name { font-size: 12px; font-weight: 500; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.item-time { font-size: 10px; color: var(--text-tertiary); flex-shrink: 0; }
+.item-preview { font-size: 11px; color: var(--text-tertiary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; min-width: 0; }
+.item-preview.unread { color: var(--text-primary); font-weight: 600; }
+
+/* BADGES */
+.badge { font-size: 10px; font-weight: 500; padding: 2px 7px; border-radius: 20px; white-space: nowrap; flex-shrink: 0; }
+.b-blue   { background: #eff4ff; color: #1d4ed8; }
+.b-green  { background: #f0fdf4; color: #166534; }
+.b-teal   { background: #f0fdf4; color: #0f766e; }
+.b-red    { background: #fef2f2; color: #991b1b; }
+.b-amber  { background: #fffbeb; color: #92400e; }
+.b-gray   { background: #f9fafb; color: #4b5563; border: 1px solid var(--border); }
+.b-dark   { background: #1a1916; color: #f5f4f1; }
+.b-purple { background: #faf5ff; color: #7e22ce; }
+
+/* DIALOG */
+.col-dialog { display: flex; flex-direction: column; border-right: 1px solid var(--border); }
+.dialog-header { padding: 10px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; min-height: 54px; }
+.dh-avatar { width: 30px; height: 30px; font-size: 11px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 600; flex-shrink: 0; border: 1px solid var(--border); background: var(--bg); color: var(--text-secondary); }
+.dh-info { flex: 1; min-width: 0; }
+.dh-name { font-size: 13px; font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dh-sub { font-size: 11px; color: var(--text-tertiary); margin-top: 2px; display: flex; align-items: center; gap: 5px; }
+.ch-icon { width: 15px; height: 15px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 9px; }
+.ch-wa { background: #dcfce7; color: #15803d; }
+.ch-ig { background: #fce7f3; color: #be185d; }
+.ch-mx { background: #dbeafe; color: #1d4ed8; }
+.dh-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.icon-btn { width: 28px; height: 28px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--surface); display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-secondary); font-size: 13px; transition: background 0.12s; }
+.icon-btn:hover { background: var(--bg); }
+
+.channels-bar { display: flex; padding: 0 14px; border-bottom: 1px solid var(--border); }
+.ch-tab { font-size: 12px; padding: 7px 10px; color: var(--text-tertiary); border-bottom: 2px solid transparent; cursor: pointer; white-space: nowrap; transition: color 0.12s; }
+.ch-tab:hover { color: var(--text-secondary); }
+.ch-tab.active { color: var(--text-primary); border-bottom-color: var(--text-primary); font-weight: 500; }
+
+.messages { flex: 1; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; overflow-y: auto; }
+.messages::-webkit-scrollbar { width: 0; }
+
+.sys-msg { font-size: 10px; color: var(--text-tertiary); text-align: center; padding: 2px 0; }
+.date-sep { font-size: 10px; color: var(--text-tertiary); text-align: center; padding: 4px 12px; background: var(--bg); border-radius: 20px; align-self: center; }
+
+.bubble { max-width: 70%; padding: 8px 11px; border-radius: 12px; }
+.bubble-in  { align-self: flex-start; background: var(--bg); border-radius: 2px 12px 12px 12px; }
+.bubble-out { align-self: flex-end; background: var(--accent-bg); border-radius: 12px 2px 12px 12px; }
+.bubble-auto { align-self: flex-start; background: #fffbeb; border-radius: 2px 12px 12px 12px; }
+.bubble-call { align-self: flex-start; background: var(--bg); border-radius: 2px 12px 12px 12px; display: flex; align-items: center; gap: 8px; padding: 8px 12px; max-width: 70%; }
+.bubble-call.missed { background: #fef2f2; }
+.bubble-media { align-self: flex-start; background: var(--bg); border-radius: 2px 12px 12px 12px; padding: 6px; max-width: 200px; }
+
+.bubble-author { font-size: 10px; color: var(--text-tertiary); margin-bottom: 2px; }
+.bubble-text { font-size: 13px; color: var(--text-primary); line-height: 1.4; }
+.bubble-meta { font-size: 10px; color: var(--text-tertiary); margin-top: 3px; text-align: right; display: flex; align-items: center; justify-content: flex-end; gap: 3px; }
+.bubble-meta.error { color: #ef4444; }
+.status-sending { color: var(--text-tertiary); font-size: 10px; }
+.status-delivered { color: var(--text-tertiary); font-size: 10px; }
+.status-read { color: var(--accent); font-size: 10px; }
+.status-error { color: #ef4444; font-size: 10px; }
+
+.call-icon-wrap { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.call-in-icon { background: #f0fdf4; color: #166534; }
+.call-out-icon { background: #eff4ff; color: #1d4ed8; }
+.call-missed-icon { background: #fef2f2; color: #991b1b; }
+.call-text { flex: 1; }
+.call-title { font-size: 12px; font-weight: 500; color: var(--text-primary); }
+.call-dur { font-size: 10px; color: var(--text-tertiary); margin-top: 1px; }
+
+.media-img { width: 100%; aspect-ratio: 4/3; background: var(--border); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: var(--text-tertiary); font-size: 24px; }
+
+.input-area { border-top: 1px solid var(--border); padding: 8px 12px; display: flex; flex-direction: column; gap: 7px; }
+.input-actions { display: flex; gap: 6px; }
+.action-chip { font-size: 11px; color: var(--text-secondary); padding: 4px 8px; border: 1px solid var(--border); border-radius: 20px; cursor: pointer; display: flex; align-items: center; gap: 4px; transition: background 0.12s; }
+.action-chip:hover { background: var(--bg); }
+.input-row { display: flex; gap: 8px; align-items: flex-end; }
+.input-field { flex: 1; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 7px 11px; font-size: 13px; color: var(--text-primary); outline: none; resize: none; font-family: inherit; min-height: 34px; }
+.input-field::placeholder { color: var(--text-tertiary); }
+.send-btn { width: 32px; height: 32px; border-radius: var(--radius-md); background: var(--accent); border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; color: white; font-size: 13px; flex-shrink: 0; transition: opacity 0.12s; }
+.send-btn:hover { opacity: 0.85; }
+
+/* RIGHT PANEL */
+.col-right { display: flex; flex-direction: column; background: var(--bg); }
+.panel-tabs { display: flex; border-bottom: 1px solid var(--border); background: var(--surface); }
+.p-tab { flex: 1; font-size: 11px; padding: 10px 6px; color: var(--text-tertiary); text-align: center; border-bottom: 2px solid transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px; transition: color 0.12s; }
+.p-tab:hover:not(.disabled) { color: var(--text-secondary); }
+.p-tab.active { color: var(--text-primary); border-bottom-color: var(--text-primary); font-weight: 500; }
+.p-tab.disabled { opacity: 0.3; pointer-events: none; }
+
+.panel-body { flex: 1; padding: 12px 10px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+.panel-body::-webkit-scrollbar { width: 0; }
+[data-panel] { display: none; }
+[data-panel].active { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
+
+.sec-lbl { font-size: 10px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; }
+.info-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 9px 11px; }
+.info-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
+.info-row:last-child { margin-bottom: 0; }
+.info-key { font-size: 11px; color: var(--text-tertiary); }
+.info-val { font-size: 11px; color: var(--text-primary); font-weight: 500; }
+.p-btn { font-size: 11px; padding: 7px 10px; border-radius: var(--radius-md); border: 1px solid var(--border); background: var(--surface); color: var(--text-primary); cursor: pointer; text-align: center; transition: background 0.12s; width: 100%; }
+.p-btn:hover { background: var(--border-light); }
+.p-btn.primary { background: var(--text-primary); color: var(--surface); border-color: var(--text-primary); }
+.p-btn.primary:hover { opacity: 0.85; }
+.visit-row { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 7px 10px; display: flex; justify-content: space-between; align-items: center; }
+.visit-name { font-size: 11px; color: var(--text-primary); }
+.visit-right { display: flex; align-items: center; gap: 5px; }
+.visit-date { font-size: 10px; color: var(--text-tertiary); }
+
+/* CLIENT PANEL */
+.client-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 10px 11px; display: flex; gap: 9px; align-items: center; }
+.client-name { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+.client-sub { font-size: 11px; color: var(--text-tertiary); margin-top: 2px; }
+.ch-pills { display: flex; gap: 5px; flex-wrap: wrap; }
+.ch-pill { font-size: 10px; padding: 3px 8px; border-radius: 20px; background: var(--surface); border: 1px solid var(--border); color: var(--text-secondary); display: flex; align-items: center; gap: 4px; }
+.call-row { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 8px 11px; display: flex; align-items: center; gap: 8px; cursor: pointer; transition: background 0.12s; }
+.call-row:hover { background: var(--bg); }
+.call-row-icon { width: 24px; height: 24px; border-radius: 50%; background: #f0fdf4; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+
+/* UNIDENTIFIED PANEL */
+.unident-body { flex: 1; padding: 14px 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 10px; overflow-y: auto; }
+.unident-icon { width: 42px; height: 42px; border-radius: 50%; background: var(--surface); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; }
+.unident-title { font-size: 13px; font-weight: 500; color: var(--text-primary); }
+.unident-sub { font-size: 11px; color: var(--text-tertiary); line-height: 1.5; max-width: 160px; }
+.unident-phone { background: #fffbeb; border-radius: var(--radius-md); padding: 8px 10px; font-size: 11px; color: #92400e; display: flex; align-items: center; gap: 6px; width: 100%; }
+.opt-btn { width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: var(--radius-md); cursor: pointer; display: flex; align-items: center; gap: 8px; background: var(--surface); text-align: left; transition: background 0.12s; }
+.opt-btn:hover { background: var(--bg); }
+.opt-icon { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.opt-title { font-size: 11px; font-weight: 500; color: var(--text-primary); }
+.opt-desc { font-size: 10px; color: var(--text-tertiary); margin-top: 1px; }
+
+/* EMPTY STATES */
+.empty-full { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; text-align: center; padding: 24px; }
+.empty-icon { width: 50px; height: 50px; border-radius: 50%; background: var(--bg); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; }
+.empty-title { font-size: 15px; font-weight: 500; color: var(--text-primary); }
+.empty-sub { font-size: 13px; color: var(--text-tertiary); line-height: 1.5; max-width: 220px; }
+.connect-btn { font-size: 13px; padding: 9px 18px; border-radius: var(--radius-md); background: var(--accent); color: white; border: none; cursor: pointer; margin-top: 4px; transition: opacity 0.12s; }
+.connect-btn:hover { opacity: 0.85; }
+
+/* OVERLAY */
+.overlay { position: absolute; top: 0; left: 260px; right: 220px; bottom: 0; background: rgba(0,0,0,0.28); display: flex; align-items: center; justify-content: center; z-index: 20; border-radius: 0; animation: fadeIn 0.15s; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+.modal { background: var(--surface); border-radius: var(--radius-lg); width: 320px; box-shadow: 0 16px 48px rgba(0,0,0,0.14); animation: slideUp 0.18s ease; overflow: hidden; }
+@keyframes slideUp { from { transform: translateY(8px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+.modal-header { padding: 14px 16px 12px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: flex-start; }
+.modal-title { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+.modal-sub { font-size: 11px; color: var(--text-tertiary); margin-top: 3px; }
+.modal-close { width: 24px; height: 24px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--surface); display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-tertiary); font-size: 11px; }
+.modal-close:hover { background: var(--bg); }
+.modal-body { padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; }
+.unknown-row { background: var(--bg); border-radius: var(--radius-md); padding: 10px 12px; display: flex; align-items: center; gap: 10px; }
+.divider { display: flex; align-items: center; gap: 8px; }
+.divider-line { flex: 1; height: 1px; background: var(--border); }
+.divider-text { font-size: 10px; color: var(--text-tertiary); }
+.modal-footer { padding: 8px 16px 14px; }
+.skip-link { font-size: 11px; color: var(--text-tertiary); text-align: center; cursor: pointer; padding: 4px; display: block; }
+.skip-link:hover { color: var(--text-secondary); }
+</style>
+</head>
+<body>
+<div class="app" id="app">
+
+  <!-- СПИСОК -->
+  <div class="col-list">
+    <div class="list-header">
+      <div class="search-wrap">
+        <i class="fa fa-search"></i>
+        <input placeholder="Поиск клиента" id="searchInput">
+      </div>
+      <div class="filter-btn"><i class="fa fa-sliders"></i></div>
+    </div>
+    <div class="chat-list" id="chatList"></div>
+  </div>
+
+  <!-- ДИАЛОГ -->
+  <div class="col-dialog" id="dialogCol">
+    <div class="empty-full" id="emptyState">
+      <div class="empty-icon"><i class="fa fa-comment-dots" style="font-size:20px;color:var(--text-tertiary)"></i></div>
+      <div class="empty-title">Чатов пока нет</div>
+      <div class="empty-sub">Новые чаты появятся здесь автоматически.</div>
+    </div>
+    <div id="dialogView" style="display:none;flex-direction:column;flex:1;overflow:hidden;position:relative;">
+      <div class="dialog-header" id="dialogHeader"></div>
+      <div class="channels-bar" id="channelsBar"></div>
+      <div class="messages" id="messages"></div>
+
+      <!-- ШАБЛОНЫ ПОПАП -->
+      <div id="templatesPopup" style="display:none;position:absolute;bottom:90px;left:12px;right:12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);box-shadow:0 4px 16px rgba(0,0,0,0.10);z-index:10;overflow:hidden;">
+        <div style="padding:8px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
+          <span style="font-size:12px;font-weight:500;color:var(--text-primary);">Шаблоны</span>
+          <div class="modal-close" onclick="closeTemplates()"><i class="fa fa-times"></i></div>
+        </div>
+        <div style="max-height:200px;overflow-y:auto;" id="templatesList"></div>
+      </div>
+
+      <!-- СОЗДАТЬ ЗАПИСЬ МОДАЛ -->
+      <div id="createRecordModal" style="display:none;position:absolute;inset:0;background:rgba(0,0,0,0.28);display:none;align-items:center;justify-content:center;z-index:15;">
+        <div style="background:var(--surface);border-radius:var(--radius-lg);width:300px;overflow:hidden;box-shadow:0 12px 40px rgba(0,0,0,0.12);">
+          <div class="modal-header">
+            <div><div class="modal-title">Новая запись</div><div class="modal-sub" id="createRecordClient"></div></div>
+            <div class="modal-close" onclick="closeCreateRecord()"><i class="fa fa-times"></i></div>
+          </div>
+          <div style="padding:14px 16px;display:flex;flex-direction:column;gap:10px;">
+            <div>
+              <div style="font-size:11px;color:var(--text-tertiary);margin-bottom:4px;">Услуга</div>
+              <select style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:var(--radius-md);font-size:12px;color:var(--text-primary);background:var(--bg);outline:none;">
+                <option>Маникюр</option>
+                <option>Педикюр</option>
+                <option>Окрашивание</option>
+                <option>Стрижка</option>
+                <option>Укладка</option>
+              </select>
+            </div>
+            <div>
+              <div style="font-size:11px;color:var(--text-tertiary);margin-bottom:4px;">Мастер</div>
+              <select style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:var(--radius-md);font-size:12px;color:var(--text-primary);background:var(--bg);outline:none;">
+                <option>Анна</option>
+                <option>Маша</option>
+                <option>Лена</option>
+              </select>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+              <div>
+                <div style="font-size:11px;color:var(--text-tertiary);margin-bottom:4px;">Дата</div>
+                <input type="date" style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:var(--radius-md);font-size:12px;color:var(--text-primary);background:var(--bg);outline:none;">
+              </div>
+              <div>
+                <div style="font-size:11px;color:var(--text-tertiary);margin-bottom:4px;">Время</div>
+                <input type="time" style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:var(--radius-md);font-size:12px;color:var(--text-primary);background:var(--bg);outline:none;">
+              </div>
+            </div>
+          </div>
+          <div style="padding:0 16px 14px;display:flex;gap:8px;">
+            <button class="p-btn" onclick="closeCreateRecord()" style="flex:1;">Отмена</button>
+            <button class="p-btn primary" onclick="saveRecord()" style="flex:1;">Создать</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="input-area">
+        <div class="input-actions">
+          <div class="action-chip" onclick="toggleTemplates()"><i class="fa fa-file-lines"></i> Шаблоны</div>
+          <div class="action-chip"><i class="fa fa-paperclip"></i></div>
+          <div class="action-chip"><i class="fa fa-face-smile"></i></div>
+        </div>
+        <div class="input-row">
+          <textarea class="input-field" id="messageInput" placeholder="Написать сообщение..." rows="1"></textarea>
+          <button class="send-btn" onclick="sendMessage()"><i class="fa fa-paper-plane"></i></button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-right">
+    <div class="panel-tabs">
+      <div class="p-tab" id="tabRecord" onclick="switchPanel('record')"><i class="fa fa-calendar-check"></i> Запись</div>
+      <div class="p-tab" id="tabClient" onclick="switchPanel('client')"><i class="fa fa-user"></i> Клиент</div>
+    </div>
+    <div data-panel="record" id="panelRecord" class="panel-body"></div>
+    <div data-panel="client" id="panelClient" class="panel-body"></div>
+    <div data-panel="unident" id="panelUnident">
+      <div class="unident-body">
+        <div class="unident-icon"><i class="fa fa-user-slash" style="font-size:17px;color:var(--text-tertiary)"></i></div>
+        <div class="unident-title">Контакт не определён</div>
+        <div class="unident-sub">Привяжите контакт чтобы видеть карточку и записи клиента</div>
+        <div class="unident-phone" id="unidentPhone"></div>
+        <div class="opt-btn" onclick="closeOverlay()">
+          <div class="opt-icon" style="background:#f0fdf4"><i class="fa fa-user-plus" style="font-size:11px;color:#166534"></i></div>
+          <div><div class="opt-title">Создать клиента</div><div class="opt-desc">Новая карточка с этим номером</div></div>
+        </div>
+        <div class="opt-btn">
+          <div class="opt-icon" style="background:#eff4ff"><i class="fa fa-link" style="font-size:11px;color:#1d4ed8"></i></div>
+          <div><div class="opt-title">Привязать к клиенту</div><div class="opt-desc">Найти в базе и добавить канал</div></div>
+        </div>
+      </div>
+    </div>
+    <div data-panel="empty-panel" id="panelEmpty">
+      <div class="unident-body">
+        <div class="unident-icon"><i class="fa fa-comment-slash" style="font-size:17px;color:var(--text-tertiary)"></i></div>
+        <div class="unident-title" style="font-size:12px;">Выберите диалог</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ОВЕРЛЕЙ НОВЫЙ КОНТАКТ -->
+  <div class="overlay" id="overlay" style="display:none;">
+    <div class="modal">
+
+      <!-- ШАГ 1: выбор действия -->
+      <div id="modalStep1">
+        <div class="modal-header">
+          <div><div class="modal-title">Новый контакт</div><div class="modal-sub">Этого контакта нет в базе клиентов</div></div>
+          <div class="modal-close" onclick="skipOverlay()"><i class="fa fa-times"></i></div>
+        </div>
+        <div class="modal-body">
+          <div class="unknown-row" id="modalContactRow"></div>
+          <div class="divider"><div class="divider-line"></div><div class="divider-text">Что сделать с контактом?</div><div class="divider-line"></div></div>
+          <div class="opt-btn" onclick="closeOverlay()">
+            <div class="opt-icon" style="background:#f0fdf4"><i class="fa fa-user-plus" style="font-size:12px;color:#166534"></i></div>
+            <div><div class="opt-title">Создать нового клиента</div><div class="opt-desc">Добавить карточку с этим контактом</div></div>
+          </div>
+          <div class="opt-btn" onclick="showSearch()">
+            <div class="opt-icon" style="background:#eff4ff"><i class="fa fa-link" style="font-size:12px;color:#1d4ed8"></i></div>
+            <div><div class="opt-title">Привязать к клиенту</div><div class="opt-desc">Найти существующего и добавить канал</div></div>
+          </div>
+        </div>
+        <div class="modal-footer"><span class="skip-link" onclick="skipOverlay()">Пропустить, ответить без привязки</span></div>
+      </div>
+
+      <!-- ШАГ 2: поиск клиента -->
+      <div id="modalStep2" style="display:none;">
+        <div class="modal-header">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <div class="modal-close" onclick="backToStep1()" style="margin-right:2px;"><i class="fa fa-arrow-left"></i></div>
+            <div><div class="modal-title">Найти клиента</div><div class="modal-sub">Введите имя или последние цифры номера</div></div>
+          </div>
+          <div class="modal-close" onclick="skipOverlay()"><i class="fa fa-times"></i></div>
+        </div>
+        <div class="modal-body" style="gap:8px;">
+          <div class="search-wrap" style="background:#f5f4f1;border:1px solid #e6e4de;">
+            <i class="fa fa-search"></i>
+            <input id="clientSearchInput" placeholder="Имя или последние цифры номера" oninput="filterClients(this.value)" style="border:none;background:transparent;outline:none;font-size:12px;color:#1a1916;width:100%;">
+          </div>
+          <div id="clientSearchResults" style="display:flex;flex-direction:column;gap:4px;max-height:220px;overflow-y:auto;"></div>
+        </div>
+      </div>
+
+      <!-- ШАГ 3: подтверждение привязки -->
+      <div id="modalStep3" style="display:none;">
+        <div class="modal-header">
+          <div><div class="modal-title">Подтвердите привязку</div><div class="modal-sub">Канал будет добавлен к этому клиенту</div></div>
+          <div class="modal-close" onclick="skipOverlay()"><i class="fa fa-times"></i></div>
+        </div>
+        <div class="modal-body">
+          <div id="confirmClientRow" class="unknown-row"></div>
+          <div class="divider"><div class="divider-line"></div><div class="divider-text">Добавить канал</div><div class="divider-line"></div></div>
+          <div id="confirmChannelRow" class="unident-phone" style="margin:0;"></div>
+          <button class="p-btn primary" onclick="confirmLink()" style="margin-top:4px;">Привязать</button>
+          <button class="p-btn" onclick="backToSearch()">Назад</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<script>
+const CHANNEL_META = {
+  wa:  { label: 'WhatsApp', iconCls: 'ch-wa', faIcon: 'fa-brands fa-whatsapp' },
+  ig:  { label: 'Instagram', iconCls: 'ch-ig', faIcon: 'fa-brands fa-instagram' },
+  max: { label: 'MAX', iconCls: 'ch-mx', faIcon: 'fa-brands fa-vk' },
+};
+
+function maskPhone(phone) {
+  const d = phone.replace(/\D/g,'');
+  if (d.length >= 11) return '+7 ••• ••• •• ' + d.slice(-2);
+  return phone;
+}
+
+function chIconHTML(chKey) {
+  const m = CHANNEL_META[chKey];
+  return `<div class="ch-icon ${m.iconCls}"><i class="${m.faIcon}"></i></div>`;
+}
+
+const CHATS = [
+  {
+    id:1, initials:'МЕ', name:'Милена Ельникова', phone:'+79991234512',
+    identified:true, unread:true,
+    badge:{text:'Записан', cls:'b-blue'},
+    channels:['wa','ig'],
+    activeChannel:0,
+    record:{ date:'Пт, 19 сент', time:'15:00', service:'Маникюр', master:'Анна', status:'Записан', statusColor:'#1d4ed8' },
+    history:[
+      {name:'Маникюр · Анна', date:'5 сент', badge:{text:'Оплатил',cls:'b-green'}},
+      {name:'Педикюр · Маша', date:'20 авг', badge:{text:'Отменил',cls:'b-red'}},
+    ],
+    client:{ visits:8, last:'5 сент', master:'Анна', avg:'2 400 ₽', channels:['wa','ig'] },
+    messages:[
+      {type:'sys', text:'Запись создана · Пятница 15:00'},
+      {type:'auto', text:'Напоминаем о визите завтра в 15:00. Пожалуйста, подтвердите +', time:'14:00'},
+      {type:'in', text:'Можно перенести на субботу?', time:'14:02'},
+      {type:'out', text:'Да, на какое время удобно?', time:'14:05', status:'read'},
+      {type:'in', text:'На 14:00 если можно', time:'14:07'},
+    ]
+  },
+  {
+    id:2, initials:'АК', name:'Алина Королёва', phone:'+79164567845',
+    identified:true, unread:false,
+    badge:{text:'Подтвердил', cls:'b-green'},
+    channels:['wa'],
+    activeChannel:0,
+    record:{ date:'Пт, 19 сент', time:'16:00', service:'Окрашивание', master:'Маша', status:'Подтвердил', statusColor:'#166534' },
+    history:[{name:'Окрашивание · Маша', date:'15 авг', badge:{text:'Оплатил',cls:'b-green'}}],
+    client:{ visits:4, last:'15 авг', master:'Маша', avg:'5 800 ₽', channels:['wa'] },
+    messages:[
+      {type:'auto', text:'Напоминаем о визите сегодня в 16:00. Пожалуйста, подтвердите +', time:'09:25'},
+      {type:'in', text:'Да, буду', time:'09:40'},
+      {type:'sys', text:'Статус изменён на «Подтвердил»'},
+    ]
+  },
+  {
+    id:3, initials:'?', name:null, phone:'+79991234523',
+    identified:false, unread:true,
+    badge:{text:'Новый', cls:'b-amber'},
+    channels:['wa'],
+    activeChannel:0,
+    record:null, history:[], client:null,
+    messages:[
+      {type:'in', text:'Здравствуйте! Хочу записаться к вам на маникюр', time:'12:55'},
+      {type:'in', text:'Подскажите, есть ли места на эту субботу?', time:'12:56'},
+    ]
+  },
+  {
+    id:'u_ig', initials:'?', name:null, phone:'',
+    igUsername: '@kseniya_novaya',
+    identified:false, unread:true,
+    badge:{text:'Новый', cls:'b-amber'},
+    channels:['ig'],
+    activeChannel:0,
+    record:null, history:[], client:null,
+    messages:[
+      {type:'in', text:'Привет! Видела ваш профиль, хочу записаться на окрашивание 🌸', time:'11:10'},
+      {type:'in', text:'Какие есть варианты по цвету?', time:'11:11'},
+    ]
+  },
+  {
+    id:'u_max', initials:'?', name:null, phone:'',
+    maxUsername: 'andrey_petrov_88',
+    identified:false, unread:true,
+    badge:{text:'Новый', cls:'b-amber'},
+    channels:['max'],
+    activeChannel:0,
+    record:null, history:[], client:null,
+    messages:[
+      {type:'in', text:'Добрый день! Интересует стрижка и укладка, сколько стоит?', time:'10:30'},
+    ]
+  },
+  {
+    id:4, initials:'ВС', name:'Виктория Смирнова', phone:'+79991236701',
+    identified:true, unread:false,
+    badge:{text:'Пришёл', cls:'b-teal'},
+    channels:['max'],
+    activeChannel:0,
+    record:{ date:'Пт, 19 сент', time:'12:00', service:'Стрижка', master:'Лена', status:'Пришёл', statusColor:'#0f766e' },
+    history:[],
+    client:{ visits:2, last:'19 сент', master:'Лена', avg:'1 800 ₽', channels:['max'] },
+    messages:[
+      {type:'call', callType:'in', title:'Входящий звонок', dur:'2 мин 15 сек', time:'11:50'},
+      {type:'in', text:'Здравствуйте!', time:'12:10'},
+      {type:'out', text:'Добрый день, ждём вас!', time:'12:12', status:'delivered'},
+    ]
+  },
+  {
+    id:5, initials:'НМ', name:'Наталья Михайлова', phone:'+79125553412',
+    identified:true, unread:false,
+    badge:{text:'Перенёс', cls:'b-amber'},
+    channels:['ig'],
+    activeChannel:0,
+    record:{ date:'Пн, 22 сент', time:'14:00', service:'Маникюр', master:'Анна', status:'Перенёс', statusColor:'#92400e' },
+    history:[],
+    client:{ visits:3, last:'5 сент', master:'Анна', avg:'2 100 ₽', channels:['ig'] },
+    messages:[
+      {type:'media', mediaType:'photo', time:'11:28', caption:'Референс стрижки'},
+      {type:'in', text:'Хочу вот такое, можно?', time:'11:29'},
+      {type:'out', text:'Конечно! Мастер Анна умеет делать такое. Когда удобно?', time:'11:32', status:'read'},
+      {type:'call', callType:'missed', title:'Пропущенный звонок', dur:'', time:'11:40'},
+      {type:'in', text:'Можно перенести на понедельник?', time:'11:41'},
+    ]
+  },
+  {
+    id:6, initials:'СП', name:'Светлана Павлова', phone:'+79991235678',
+    identified:true, unread:false,
+    badge:{text:'Отменил', cls:'b-red'},
+    channels:['wa'],
+    activeChannel:0,
+    record:null, history:[],
+    client:{ visits:1, last:'19 авг', master:'Маша', avg:'3 200 ₽', channels:['wa'] },
+    messages:[
+      {type:'auto', text:'Напоминаем о визите завтра в 11:00. Пожалуйста, подтвердите +', time:'14:00'},
+      {type:'in', text:'К сожалению не смогу прийти, отменяю', time:'10:55'},
+      {type:'sys', text:'Статус изменён на «Отменил»'},
+    ]
+  },
+  {
+    id:7, initials:'АН', name:'Анна Кузнецова', phone:'+79991239012',
+    identified:true, unread:false,
+    badge:{text:'Был давно', cls:'b-gray'},
+    channels:['wa','ig','max'],
+    activeChannel:0,
+    record:null, history:[],
+    client:{ visits:6, last:'3 мес назад', master:'Анна', avg:'2 600 ₽', channels:['wa','ig','max'] },
+    messages:[
+      {type:'in', text:'Здравствуйте! Когда у вас ближайшее свободное время?', time:'15:10'},
+      {type:'out', text:'Добрый день! Есть завтра в 15:00 и послезавтра в 12:00. Как вам?', time:'15:13', status:'error'},
+    ]
+  },
+  {
+    id:8, initials:'ЕН', name:'Елена Новикова', phone:'+79991230112',
+    identified:true, unread:false,
+    badge:{text:'ЧС', cls:'b-dark'},
+    channels:['wa'],
+    activeChannel:0,
+    record:null, history:[],
+    client:{ visits:0, last:'—', master:'—', avg:'—', channels:['wa'] },
+    messages:[
+      {type:'in', text:'Здравствуйте!', time:'10:30'},
+    ]
+  },
+];
+
+let currentChat = null;
+let panelMode = 'record';
+let selectedClient = null;
+
+function getChatIdentifier(c) {
+  if (c.identified && c.name) return c.name;
+  if (c.channels[0] === 'ig' && c.igUsername) return c.igUsername;
+  if (c.channels[0] === 'max' && c.maxUsername) return c.maxUsername;
+  return maskPhone(c.phone);
+}
+
+function getLastPreview(chat) {
+  const msgs = chat.messages;
+  for (let i = msgs.length - 1; i >= 0; i--) {
+    const m = msgs[i];
+    if (m.type === 'in') return m.text;
+    if (m.type === 'out') return 'Вы: ' + m.text;
+    if (m.type === 'auto') return 'Авто: ' + m.text;
+    if (m.type === 'call') return m.title;
+    if (m.type === 'media') return '📎 Фото';
+  }
+  return '';
+}
+
+function getLastTime(chat) {
+  const msgs = chat.messages;
+  for (let i = msgs.length - 1; i >= 0; i--) {
+    if (chat.messages[i].time) return chat.messages[i].time;
+  }
+  return '';
+}
+
+function renderList() {
+  const list = document.getElementById('chatList');
+  list.innerHTML = CHATS.map(c => {
+    const preview = getLastPreview(c);
+    const time = getLastTime(c);
+    const displayName = getChatIdentifier(c);
+    return `
+      <div class="chat-item ${currentChat?.id === c.id ? 'active' : ''}" onclick="openChat('${c.id}')">
+        <div class="avatar">${c.initials}</div>
+        <div class="item-body">
+          <div class="item-r1">
+            <span class="item-name">${displayName}</span>
+            <span class="badge ${c.badge.cls}">${c.badge.text}</span>
+          </div>
+          <div class="item-r2">
+            <span class="item-preview ${c.unread ? 'unread' : ''}">${preview}</span>
+            <span class="item-time">${time}</span>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function openChat(id) {
+  currentChat = CHATS.find(c => c.id == id);
+  currentChat.unread = false;
+  renderList();
+
+  document.getElementById('emptyState').style.display = 'none';
+  const dv = document.getElementById('dialogView');
+  dv.style.display = 'flex';
+
+  renderHeader();
+  renderChannelsBar();
+  renderMessages();
+  renderPanel();
+
+  if (!currentChat.identified) {
+    renderModalContact();
+    document.getElementById('overlay').style.display = 'flex';
+  } else {
+    document.getElementById('overlay').style.display = 'none';
+  }
+}
+
+function renderHeader() {
+  const c = currentChat;
+  const chKey = c.channels[c.activeChannel];
+  const chMeta = CHANNEL_META[chKey];
+  const masked = maskPhone(c.phone);
+
+  // Идентификатор в зависимости от канала и статуса
+  let identifier = masked;
+  if (!c.identified) {
+    if (chKey === 'ig') identifier = c.igUsername || '@неизвестный';
+    else if (chKey === 'max') identifier = c.maxUsername || 'Неизвестный';
+    else identifier = masked;
+  }
+
+  const displayName = c.identified && c.name ? c.name : identifier;
+  const subHTML = `${chIconHTML(chKey)}<span>${c.identified ? masked : identifier}</span>`;
+
+  document.getElementById('dialogHeader').innerHTML = `
+    <div class="dh-avatar">${c.initials}</div>
+    <div class="dh-info">
+      <div class="dh-name">${displayName}</div>
+      <div class="dh-sub">${subHTML}</div>
+    </div>
+    <div class="dh-right">
+      <span class="badge ${c.badge.cls}">${c.badge.text}</span>
+      <div class="icon-btn"><i class="fa fa-ellipsis-v"></i></div>
+    </div>`;
+}
+
+function renderChannelsBar() {
+  const c = currentChat;
+  const bar = document.getElementById('channelsBar');
+  if (c.channels.length <= 1) {
+    bar.innerHTML = '';
+    bar.style.display = 'none';
+    return;
+  }
+  bar.style.display = 'flex';
+  bar.innerHTML = c.channels.map((ch, i) => `
+    <div class="ch-tab ${i === c.activeChannel ? 'active' : ''}" onclick="switchChannel(${i})">
+      ${CHANNEL_META[ch].label}
+    </div>`).join('');
+}
+
+function switchChannel(i) {
+  currentChat.activeChannel = i;
+  renderHeader();
+  renderChannelsBar();
+}
+
+function renderMessages() {
+  const msgs = document.getElementById('messages');
+  msgs.innerHTML = currentChat.messages.map(m => {
+    if (m.type === 'sys') return `<div class="sys-msg">${m.text}</div>`;
+    if (m.type === 'call') {
+      const cls = m.callType === 'missed' ? 'missed' : '';
+      const iconCls = m.callType === 'in' ? 'call-in-icon' : m.callType === 'missed' ? 'call-missed-icon' : 'call-out-icon';
+      const icon = m.callType === 'missed' ? 'fa-phone-slash' : 'fa-phone';
+      return `<div class="bubble-call ${cls}">
+        <div class="call-icon-wrap ${iconCls}"><i class="fa ${icon}" style="font-size:12px"></i></div>
+        <div class="call-text">
+          <div class="call-title">${m.title}</div>
+          ${m.dur ? `<div class="call-dur">${m.dur} · ${m.time}</div>` : `<div class="call-dur">${m.time}</div>`}
+        </div>
+      </div>`;
+    }
+    if (m.type === 'media') {
+      return `<div class="bubble-media">
+        <div class="media-img"><i class="fa fa-image"></i></div>
+        ${m.caption ? `<div style="font-size:11px;color:var(--text-secondary);padding:4px 2px 2px">${m.caption}</div>` : ''}
+        <div style="font-size:10px;color:var(--text-tertiary);text-align:right;padding:0 2px">${m.time}</div>
+      </div>`;
+    }
+    const cls = m.type === 'auto' ? 'bubble bubble-auto' : m.type === 'in' ? 'bubble bubble-in' : 'bubble bubble-out';
+    let statusHTML = '';
+    if (m.status === 'read') statusHTML = '<i class="fa fa-check-double status-read"></i>';
+    else if (m.status === 'delivered') statusHTML = '<i class="fa fa-check-double status-delivered"></i>';
+    else if (m.status === 'sent') statusHTML = '<i class="fa fa-check status-sending"></i>';
+    else if (m.status === 'error') statusHTML = '<i class="fa fa-circle-exclamation status-error"></i>';
+    const metaCls = m.status === 'error' ? 'bubble-meta error' : 'bubble-meta';
+    const timeColor = m.status === 'error' ? 'color:#ef4444' : '';
+    return `<div class="${cls}">
+      ${m.type === 'auto' ? '<div class="bubble-author">Авто</div>' : ''}
+      <div class="bubble-text">${m.text}</div>
+      <div class="${metaCls}">${statusHTML} <span style="${timeColor}">${m.time}</span></div>
+    </div>`;
+  }).join('');
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function renderPanel() {
+  const t1 = document.getElementById('tabRecord');
+  const t2 = document.getElementById('tabClient');
+  document.querySelectorAll('[data-panel]').forEach(el => el.classList.remove('active'));
+
+  if (!currentChat.identified) {
+    t1.classList.add('disabled'); t2.classList.add('disabled');
+    t1.classList.remove('active'); t2.classList.remove('active');
+    const ph = document.getElementById('unidentPhone');
+    const chKey = currentChat.channels[0];
+    let ident;
+    if (chKey === 'wa') ident = maskPhone(currentChat.phone);
+    else if (chKey === 'ig') ident = currentChat.igUsername || '@неизвестный';
+    else ident = currentChat.maxUsername || 'Неизвестный';
+    ph.innerHTML = `${chIconHTML(chKey)} ${ident} · ${CHANNEL_META[chKey].label}`;
+    document.getElementById('panelUnident').classList.add('active');
+    return;
+  }
+  t1.classList.remove('disabled'); t2.classList.remove('disabled');
+  switchPanel(panelMode);
+}
+
+function switchPanel(mode) {
+  panelMode = mode;
+  document.querySelectorAll('[data-panel]').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.p-tab').forEach(el => el.classList.remove('active'));
+
+  if (mode === 'record') {
+    document.getElementById('tabRecord').classList.add('active');
+    const panel = document.getElementById('panelRecord');
+    panel.classList.add('active');
+    const c = currentChat;
+
+    if (!c.record) {
+      panel.innerHTML = `
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:8px;padding:16px;">
+          <div class="unident-icon"><i class="fa fa-calendar-xmark" style="font-size:17px;color:var(--text-tertiary)"></i></div>
+          <div style="font-size:12px;font-weight:500;color:var(--text-primary);">Нет записей</div>
+          <div style="font-size:11px;color:var(--text-tertiary);line-height:1.5;">У клиента нет активных или предстоящих записей</div>
+          <button class="p-btn primary" onclick="openCreateRecord()" style="margin-top:4px;">Создать запись</button>
+        </div>`;
+      return;
+    }
+    const records = c.records || (c.record ? [c.record] : []);
+    const hist = c.history.map(h => `
+      <div class="visit-row">
+        <span class="visit-name">${h.name}</span>
+        <div class="visit-right"><span class="visit-date">${h.date}</span><span class="badge ${h.badge.cls}">${h.badge.text}</span></div>
+      </div>`).join('');
+
+    const recordsHTML = records.map((r, i) => `
+      <div class="info-card" style="${i > 0 ? 'margin-top:6px;' : ''}">
+        <div class="info-row"><span class="info-key">Дата</span><span class="info-val">${r.date}</span></div>
+        <div class="info-row"><span class="info-key">Время</span><span class="info-val">${r.time}</span></div>
+        <div class="info-row"><span class="info-key">Услуга</span><span class="info-val">${r.service}</span></div>
+        <div class="info-row"><span class="info-key">Мастер</span><span class="info-val">${r.master}</span></div>
+        <div class="info-row"><span class="info-key">Статус</span><span class="info-val" style="color:${r.statusColor}">${r.status}</span></div>
+      </div>
+      <button class="p-btn primary">Перенести</button>
+      <button class="p-btn">Отменить запись</button>
+      <button class="p-btn">Открыть запись</button>`).join('<div style="height:8px;"></div>');
+
+    panel.innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <div class="sec-lbl">Ближайшие записи</div>
+        <button onclick="openCreateRecord()" style="font-size:10px;color:var(--accent);background:none;border:none;cursor:pointer;padding:0;font-weight:500;display:flex;align-items:center;gap:3px;"><i class="fa fa-plus" style="font-size:9px;"></i> Ещё запись</button>
+      </div>
+      ${recordsHTML}
+      ${hist ? `<div class="sec-lbl" style="margin-top:4px;">История</div>${hist}` : ''}`;
+  } else {
+    document.getElementById('tabClient').classList.add('active');
+    const panel = document.getElementById('panelClient');
+    panel.classList.add('active');
+    const c = currentChat;
+    const cl = c.client;
+    const chPills = cl.channels.map(ch =>
+      `<div class="ch-pill">${chIconHTML(ch)} ${CHANNEL_META[ch].label}</div>`).join('');
+    panel.innerHTML = `
+      <div class="client-card">
+        <div class="avatar" style="width:32px;height:32px;font-size:11px;">${c.initials}</div>
+        <div><div class="client-name">${c.name || maskPhone(c.phone)}</div><div class="client-sub">${maskPhone(c.phone)}</div></div>
+      </div>
+      <div class="sec-lbl">Каналы</div>
+      <div class="ch-pills">${chPills}</div>
+      <div class="call-row">
+        <div class="call-row-icon"><i class="fa fa-phone" style="font-size:11px;color:#166534"></i></div>
+        <span style="font-size:12px;color:var(--text-primary);font-weight:500;">Позвонить</span>
+      </div>
+      <button class="p-btn">Открыть карточку</button>
+      <div class="sec-lbl">О клиенте</div>
+      <div class="info-card">
+        <div class="info-row"><span class="info-key">Визитов</span><span class="info-val">${cl.visits}</span></div>
+        <div class="info-row"><span class="info-key">Последний</span><span class="info-val">${cl.last}</span></div>
+        <div class="info-row"><span class="info-key">Мастер</span><span class="info-val">${cl.master}</span></div>
+        <div class="info-row"><span class="info-key">Средний чек</span><span class="info-val">${cl.avg}</span></div>
+      </div>`;
+  }
+}
+
+function renderModalContact() {
+  const c = currentChat;
+  const chKey = c.channels[0];
+  const chMeta = CHANNEL_META[chKey];
+  let identifier;
+  if (chKey === 'wa') identifier = maskPhone(c.phone);
+  else if (chKey === 'ig') identifier = c.igUsername || '@неизвестный';
+  else identifier = c.maxUsername || 'Неизвестный';
+  document.getElementById('modalContactRow').innerHTML = `
+    <div class="avatar" style="width:30px;height:30px;font-size:12px;">${c.initials}</div>
+    <div>
+      <div style="font-size:13px;font-weight:500;color:var(--text-primary);">${identifier}</div>
+      <div style="font-size:11px;color:var(--text-tertiary);display:flex;align-items:center;gap:4px;margin-top:2px;">
+        ${chIconHTML(chKey)} ${chMeta.label}
+      </div>
+    </div>`;
+}
+
+// Список известных клиентов для поиска
+const KNOWN_CLIENTS = [
+  { id:1, initials:'МЕ', name:'Милена Ельникова', phone:'+79991234512', badge:{text:'Записан',cls:'b-blue'}, record:{date:'Пт, 19 сент',time:'15:00',service:'Маникюр',master:'Анна',status:'Записан',statusColor:'#1d4ed8'}, history:[{name:'Маникюр · Анна',date:'5 сент',badge:{text:'Оплатил',cls:'b-green'}}], client:{visits:8,last:'5 сент',master:'Анна',avg:'2 400 ₽',channels:['wa','ig']} },
+  { id:2, initials:'АК', name:'Алина Королёва', phone:'+79164567845', badge:{text:'Подтвердил',cls:'b-green'}, record:{date:'Пт, 19 сент',time:'16:00',service:'Окрашивание',master:'Маша',status:'Подтвердил',statusColor:'#166534'}, history:[], client:{visits:4,last:'15 авг',master:'Маша',avg:'5 800 ₽',channels:['wa']} },
+  { id:4, initials:'ВС', name:'Виктория Смирнова', phone:'+79991236701', badge:{text:'Пришёл',cls:'b-teal'}, record:{date:'Пт, 19 сент',time:'12:00',service:'Стрижка',master:'Лена',status:'Пришёл',statusColor:'#0f766e'}, history:[], client:{visits:2,last:'19 сент',master:'Лена',avg:'1 800 ₽',channels:['max']} },
+  { id:5, initials:'НМ', name:'Наталья Михайлова', phone:'+79125553412', badge:{text:'Перенёс',cls:'b-amber'}, record:{date:'Пн, 22 сент',time:'14:00',service:'Маникюр',master:'Анна',status:'Перенёс',statusColor:'#92400e'}, history:[], client:{visits:3,last:'5 сент',master:'Анна',avg:'2 100 ₽',channels:['ig']} },
+  { id:6, initials:'СП', name:'Светлана Павлова', phone:'+79991235678', badge:{text:'Отменил',cls:'b-red'}, record:null, history:[], client:{visits:1,last:'19 авг',master:'Маша',avg:'3 200 ₽',channels:['wa']} },
+  { id:7, initials:'АН', name:'Анна Кузнецова', phone:'+79991239012', badge:{text:'Был давно',cls:'b-gray'}, record:null, history:[], client:{visits:6,last:'3 мес назад',master:'Анна',avg:'2 600 ₽',channels:['wa','ig','max']} },
+];
+
+
+function showStep(n) {
+  ['modalStep1','modalStep2','modalStep3'].forEach(id => {
+    document.getElementById(id).style.display = 'none';
+  });
+  document.getElementById('modalStep' + n).style.display = 'block';
+}
+
+function showSearch() {
+  showStep(2);
+  document.getElementById('clientSearchInput').value = '';
+  filterClients('');
+  setTimeout(() => document.getElementById('clientSearchInput').focus(), 50);
+}
+
+function backToStep1() { showStep(1); }
+function backToSearch() { showStep(2); }
+
+function filterClients(query) {
+  const q = query.toLowerCase().trim();
+  const results = KNOWN_CLIENTS.filter(c => {
+    if (!q) return true;
+    const lastTwo = c.phone.slice(-2);
+    return c.name.toLowerCase().includes(q) || lastTwo.includes(q);
+  });
+  const container = document.getElementById('clientSearchResults');
+  if (results.length === 0) {
+    container.innerHTML = `<div style="font-size:12px;color:var(--text-tertiary);text-align:center;padding:16px 0;">Клиент не найден</div>`;
+    return;
+  }
+  container.innerHTML = results.map(c => `
+    <div class="opt-btn" onclick="selectClient(${c.id})" style="padding:8px 10px;">
+      <div class="avatar" style="width:28px;height:28px;font-size:10px;flex-shrink:0;">${c.initials}</div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:12px;font-weight:500;color:var(--text-primary);">${c.name}</div>
+        <div style="font-size:10px;color:var(--text-tertiary);margin-top:1px;">${maskPhone(c.phone)}</div>
+      </div>
+      <span class="badge ${c.badge.cls}" style="font-size:9px;">${c.badge.text}</span>
+    </div>`).join('');
+}
+
+function selectClient(clientId) {
+  selectedClient = KNOWN_CLIENTS.find(c => c.id === clientId);
+  const chKey = currentChat.channels[0];
+  const chMeta = CHANNEL_META[chKey];
+  document.getElementById('confirmClientRow').innerHTML = `
+    <div class="avatar" style="width:30px;height:30px;font-size:11px;">${selectedClient.initials}</div>
+    <div>
+      <div style="font-size:13px;font-weight:500;color:var(--text-primary);">${selectedClient.name}</div>
+      <div style="font-size:11px;color:var(--text-tertiary);margin-top:1px;">${maskPhone(selectedClient.phone)}</div>
+    </div>`;
+  let ident;
+  if (chKey === 'wa') ident = maskPhone(currentChat.phone);
+  else if (chKey === 'ig') ident = currentChat.igUsername || '@неизвестный';
+  else ident = currentChat.maxUsername || 'Неизвестный';
+  document.getElementById('confirmChannelRow').innerHTML = `${chIconHTML(chKey)} ${chMeta.label} · ${ident}`;
+  showStep(3);
+}
+
+function confirmLink() {
+  if (!selectedClient || !currentChat) return;
+  const newChannel = currentChat.channels[0];
+  const newMessages = [...currentChat.messages];
+
+  // Найти существующий чат этого клиента в списке
+  const existingChat = CHATS.find(c => c.id == selectedClient.id);
+
+  if (existingChat) {
+    // Добавить канал если его ещё нет
+    if (!existingChat.channels.includes(newChannel)) {
+      existingChat.channels.push(newChannel);
+      if (existingChat.client) existingChat.client.channels = [...existingChat.channels];
+    }
+    // Добавить сообщения из неизвестного чата
+    existingChat.messages = [...existingChat.messages, ...newMessages];
+    existingChat.unread = true;
+
+    // Удалить неизвестный чат из списка
+    const idx = CHATS.findIndex(c => c.id == currentChat.id);
+    if (idx !== -1) CHATS.splice(idx, 1);
+
+    // Открыть существующий чат
+    currentChat = existingChat;
+  } else {
+    // Клиент есть в KNOWN_CLIENTS но нет в CHATS — создаём чат
+    currentChat.identified = true;
+    currentChat.id = selectedClient.id;
+    currentChat.name = selectedClient.name;
+    currentChat.initials = selectedClient.initials;
+    currentChat.badge = selectedClient.badge;
+    currentChat.record = selectedClient.record;
+    currentChat.history = selectedClient.history;
+    currentChat.client = { ...selectedClient.client, channels: [...selectedClient.client.channels, newChannel] };
+  }
+
+  document.getElementById('overlay').style.display = 'none';
+  showStep(1);
+  renderList();
+  renderHeader();
+  renderChannelsBar();
+  renderMessages();
+  document.getElementById('tabRecord').classList.remove('disabled');
+  document.getElementById('tabClient').classList.remove('disabled');
+  switchPanel('record');
+  selectedClient = null;
+}
+
+function closeOverlay() {
+  document.getElementById('overlay').style.display = 'none';
+  showStep(1);
+  if (currentChat) {
+    currentChat.identified = true;
+    currentChat.name = 'Новый клиент';
+    currentChat.badge = { text: 'Нет записи', cls: 'b-gray' };
+    currentChat.client = { visits: 0, last: '—', master: '—', avg: '—', channels: currentChat.channels };
+    renderList();
+    renderHeader();
+    document.getElementById('tabRecord').classList.remove('disabled');
+    document.getElementById('tabClient').classList.remove('disabled');
+    switchPanel('record');
+  }
+}
+
+function skipOverlay() {
+  document.getElementById('overlay').style.display = 'none';
+  showStep(1);
+  document.querySelectorAll('[data-panel]').forEach(el => el.classList.remove('active'));
+  document.getElementById('panelUnident').classList.add('active');
+  document.getElementById('tabRecord').classList.add('disabled');
+  document.getElementById('tabClient').classList.add('disabled');
+  document.querySelectorAll('.p-tab').forEach(el => el.classList.remove('active'));
+}
+
+// ── ШАБЛОНЫ ──
+const TEMPLATES = [
+  { id:1, title:'Напоминание о записи', text:'Добрый день! Напоминаем о вашей записи {дата} в {время}. Ждём вас! 🌸' },
+  { id:2, title:'Подтверждение переноса', text:'Запись перенесена на {дата} в {время}. Если что-то изменится — напишите нам.' },
+  { id:3, title:'Подтверждение отмены', text:'Запись отменена. Будем рады видеть вас снова — запишитесь в удобное время!' },
+  { id:4, title:'Приветствие новому клиенту', text:'Здравствуйте! Рады познакомиться 😊 Чем могу помочь?' },
+  { id:5, title:'Уточнение времени', text:'Добрый день! Подскажите, какое время вам было бы удобно?' },
+  { id:6, title:'Опоздание мастера', text:'Добрый день! Мастер немного задерживается, будет через 10–15 минут. Приносим извинения!' },
+];
+
+function toggleTemplates() {
+  const popup = document.getElementById('templatesPopup');
+  if (popup.style.display === 'none' || !popup.style.display) {
+    renderTemplates();
+    popup.style.display = 'block';
+  } else {
+    popup.style.display = 'none';
+  }
+}
+
+function closeTemplates() {
+  document.getElementById('templatesPopup').style.display = 'none';
+}
+
+function renderTemplates() {
+  const list = document.getElementById('templatesList');
+  list.innerHTML = TEMPLATES.map(t => `
+    <div onclick="applyTemplate(${t.id})" style="padding:9px 12px;cursor:pointer;border-bottom:1px solid var(--border-light);transition:background 0.1s;" onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background=''">
+      <div style="font-size:12px;font-weight:500;color:var(--text-primary);margin-bottom:2px;">${t.title}</div>
+      <div style="font-size:11px;color:var(--text-tertiary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${t.text}</div>
+    </div>`).join('');
+}
+
+function applyTemplate(id) {
+  const tpl = TEMPLATES.find(t => t.id === id);
+  if (!tpl) return;
+  let text = tpl.text;
+  if (currentChat?.record) {
+    text = text.replace('{дата}', currentChat.record.date).replace('{время}', currentChat.record.time);
+  }
+  const input = document.getElementById('messageInput');
+  input.value = text;
+  input.focus();
+  closeTemplates();
+}
+
+// ── ОТПРАВКА СООБЩЕНИЯ ──
+function sendMessage() {
+  const input = document.getElementById('messageInput');
+  const text = input.value.trim();
+  if (!text || !currentChat) return;
+  currentChat.messages.push({ type:'out', text, time: new Date().toLocaleTimeString('ru',{hour:'2-digit',minute:'2-digit'}), status:'sent' });
+  input.value = '';
+  renderMessages();
+  renderList();
+}
+
+// ── СОЗДАТЬ ЗАПИСЬ ──
+function openCreateRecord() {
+  const modal = document.getElementById('createRecordModal');
+  const sub = document.getElementById('createRecordClient');
+  sub.textContent = currentChat?.name || getChatIdentifier(currentChat);
+  modal.style.display = 'flex';
+}
+
+function closeCreateRecord() {
+  document.getElementById('createRecordModal').style.display = 'none';
+}
+
+function saveRecord() {
+  const service = document.querySelector('#createRecordModal select').value;
+  const master = document.querySelectorAll('#createRecordModal select')[1].value;
+  const date = document.querySelector('#createRecordModal input[type=date]').value;
+  const time = document.querySelector('#createRecordModal input[type=time]').value;
+  const dateStr = date ? new Date(date).toLocaleDateString('ru',{weekday:'short',day:'numeric',month:'short'}) : 'Дата не выбрана';
+  const timeStr = time || '—';
+  if (currentChat) {
+    const newRecord = { date: dateStr, time: timeStr, service, master, status: 'Записан', statusColor: '#1d4ed8' };
+    // Если записей ещё нет — инициализируем массив
+    if (!currentChat.records) {
+      currentChat.records = currentChat.record ? [currentChat.record] : [];
+    }
+    currentChat.records.push(newRecord);
+    currentChat.record = currentChat.records[0]; // первая как основная для совместимости
+    currentChat.badge = { text: 'Записан', cls: 'b-blue' };
+    currentChat.messages.push({ type:'sys', text:`Запись создана · ${dateStr} ${timeStr}` });
+    renderMessages();
+    renderList();
+    renderHeader();
+    switchPanel('record');
+  }
+  closeCreateRecord();
+}
+
+// ── INIT ──
+document.querySelectorAll('[data-panel]').forEach(el => el.classList.remove('active'));
+document.getElementById('panelEmpty').classList.add('active');
+renderList();
+</script>
+</body>
+</html>
